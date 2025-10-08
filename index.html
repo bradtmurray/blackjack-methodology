@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blackjack Methodology - Precision Tools for Side Bet Analysis</title>
+<meta name="description" content="Blackjack Methodology, home of the exclusive, completely free Blackjack Side Bet Counter. Professional-grade analytics for Pairs, 21+3, and Lucky Ladies." />
+<style>
+  :root{
+    --bg:#0b0b0b;--surface:#121212;--text:#f5f5f5;--muted:#a1a1aa;--accent:#22c55e;--border:#1f1f1f
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  a{color:inherit;text-decoration:none}
+
+  /* HEADER */
+  header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;position:sticky;top:0;z-index:50}
+  .logo-wrap{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+  .nav{display:flex;gap:24px;align-items:center}
+  .nav a{color:var(--muted);font-size:14px;transition:.2s}
+  .nav a:hover{color:var(--accent)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;border:1px solid var(--border);background:#151515;transition:.25s}
+  .btn:hover{background:#1d1d1d}
+  .btn.primary{background:linear-gradient(90deg,#15803d,#16a34a);border:none;color:#fff}
+  .btn.primary:hover{opacity:.9}
+
+  /* HERO */
+  .hero{
+    min-height:100vh;
+    padding:0 24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+  .hero h1{
+    font-size:54px;
+    letter-spacing:-.02em;
+    line-height:1.1;
+    margin-bottom:20px;
+    font-weight:800;
+    max-width:900px;
+  }
+  .hero p{
+    max-width:720px;
+    margin:0 auto;
+    color:var(--muted);
+    font-size:20px;
+  }
+  .cta{
+    margin-top:36px;
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .badge{
+    display:inline-block;
+    margin-top:24px;
+    padding:8px 16px;
+    border-radius:9999px;
+    border:1px solid rgba(34,197,94,.4);
+    color:#a7f3d0;
+    font-size:13px;
+    letter-spacing:.02em;
+  }
+
+  /* SECTIONS */
+  .section{padding:70px 24px;border-top:1px solid var(--border)}
+  .section h2{text-align:center;font-size:30px;font-weight:700;margin-bottom:14px}
+  .section p.intro{text-align:center;max-width:900px;margin:0 auto 36px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:left}
+  .card h3{margin-bottom:6px;font-size:18px;font-weight:700}
+  .card p{color:var(--muted);font-size:15px}
+
+  /* FOOTER */
+  footer{padding:32px 24px;border-top:1px solid var(--border);color:var(--muted);text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-wrap">
+    <span>Blackjack Methodology</span>
+  </div>
+  <nav class="nav">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a class="btn primary" href="sidebet_counter.html">Launch Counter</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Professional Tools for <span style="color:var(--accent)">Side Bet Precision</span></h1>
+  <p>The Blackjack Side Bet Counter from Blackjack Methodology delivers real time analytics for Pairs, 21+3, and Lucky Ladies with clear presentation. <b>Completely free to use.</b></p>
+  <div class="cta">
+    <a class="btn primary" href="sidebet_counter.html">Launch Counter</a>
+    <a class="btn" href="#features">Explore Features</a>
+  </div>
+  <div class="badge">Exclusive to Blackjack Methodology</div>
+</section>
+
+<section id="features" class="section">
+  <h2>Engineered for accuracy</h2>
+  <p class="intro">The Counter focuses on accuracy, speed, and clarity. It is built in house and offered free of charge.</p>
+  <div class="grid">
+    <div class="card"><h3>Real time calculations</h3><p>Updates probabilities as each card is logged. No approximations.</p></div>
+    <div class="card"><h3>Structured display</h3><p>Pairs, 21+3, and Lucky Ladies share one consistent table for quick comparison.</p></div>
+    <div class="card"><h3>Recommendations</h3><p>Highlights the current strongest side bet relative to a baseline.</p></div>
+    <div class="card"><h3>Deck and tilt tracking</h3><p>Shows penetration and the balance of high to low cards.</p></div>
+    <div class="card"><h3>Fast entry</h3><p>Type shorthand like <span class="mono">AS</span> or <span class="mono">10H</span> to record cards immediately.</p></div>
+    <div class="card"><h3>Free access</h3><p>No fees or sign ups. Full access at no cost.</p></div>
+  </div>
+</section>
+
+<section id="how" class="section">
+  <h2>How it works</h2>
+  <p class="intro">This section explains the core logic and daily use. It covers the data model, the intake flow for cards, the probability engine, and how recommendations are produced.</p>
+  <div class="grid" style="max-width:1100px;margin:0 auto">
+    <div class="card"><h3>1. Data model</h3><p>The Counter stores counts for each rank and suit across the active decks. The model tracks total cards remaining, totals by rank, and totals by suit. These values drive all probability outputs.</p></div>
+    <div class="card"><h3>2. Setup</h3><p>Choose the number of decks to match the table. The system initializes the counts to that deck size and computes a baseline for comparison.</p></div>
+    <div class="card"><h3>3. Card intake</h3><p>Enter cards by rank or by full notation. For example, type <span class="mono">QH</span>, <span class="mono">AS</span>, or <span class="mono">4</span>. Each entry decrements the correct rank and suit, updates history, and refreshes all outputs.</p></div>
+    <div class="card"><h3>4. Probability engine</h3><p>The engine computes exact combinations for two or three card events using combinations C(n, k). It calculates outcomes for Pairs, 21+3 patterns, and Lucky Ladies cases, then converts counts to probabilities by dividing by the total number of two or three card combinations available in the remaining shoe.</p></div>
+    <div class="card"><h3>5. 21+3 logic</h3><p>For 21+3, the system evaluates straights, flushes, straight flushes, trips, suited trips, and any win. It removes overlap between categories so that straight and flush values exclude straight flush results.</p></div>
+    <div class="card"><h3>6. Lucky Ladies logic</h3><p>For Lucky Ladies, it computes unsuited twenty, suited twenty, matched twenty, Q of hearts pairs, and Q of hearts pair with dealer blackjack. It conditions dealer blackjack probability on the state of the shoe after removing the player pair.</p></div>
+    <div class="card"><h3>7. Recommendation method</h3><p>The recommendation compares current probabilities to the baseline initialized at the start of the shoe. It selects the highest current probability and shows the difference from baseline for context.</p></div>
+    <div class="card"><h3>8. Workflow at the table</h3><p>Set deck count, start a new shoe, log cards as they appear, check penetration and tilt, review side bet odds, and use the recommendation to identify favorable spots.</p></div>
+    <div class="card"><h3>9. Notes</h3><p>The Counter is a tool for information. It does not play hands or place bets. Use it within all applicable rules and laws.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>© <span id="yr"></span> Blackjack Methodology. All rights reserved.</p>
+  <p style="margin-top:8px;font-size:12px">For informational and educational use only. Follow all applicable laws and casino regulations.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>
