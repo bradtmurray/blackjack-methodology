@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blackjack Side Bet Counter — Pairs / 21+3 / Bust Bias</title>
+<style>
+  :root { --bg:#0b0b0b; --panel:#171717; --muted:#9ca3af; --text:#f5f5f5; --green:#16a34a; --amber:#f59e0b; --rose:#ef4444; --blue:#3b82f6; --ring:#22c55e; --border:#262626; }
+  *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .container{max-width:1200px;margin:0 auto;padding:24px}
+  h1{margin:0 0 6px;font-size:28px;font-weight:700;letter-spacing:-.01em}
+  .sub{margin:0 0 10px;color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:16px}
+  .cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  @media (max-width: 900px){ .cols-3{grid-template-columns:1fr} .container{padding:16px} }
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .section-title{font-weight:700;font-size:18px;margin:0 0 8px}
+  .statbox{display:flex;gap:12px;flex-wrap:wrap}
+  .stat{background:#101010;border:1px solid var(--border);border-radius:12px;padding:10px 12px;min-width:140px}
+  .stat .label{color:#a1a1aa;font-size:11px;text-transform:uppercase}
+  .stat .value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .input{background:#1f1f1f;border:1px solid var(--border);color:#fff;border-radius:10px;padding:8px 10px;outline:none;min-width:120px}
+  .btn{background:#1f1f1f;border:1px solid var(--border);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .btn:hover{background:#262626}
+  .table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  .th,.td{padding:8px 10px}
+  .tr{background:#111;border:1px solid var(--border);border-radius:10px}
+  .th{color:#a1a1aa;font-size:12px;text-transform:uppercase}
+  .battery-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .battery{position:relative;width:260px;height:30px;border:2px solid #3f3f46;border-radius:8px;background:#0f172a;overflow:hidden}
+  .battery::after{content:"";position:absolute;right:-10px;top:6px;width:8px;height:16px;background:#3f3f46;border-radius:2px}
+  .battery-fill{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);transition:width .2s ease}
+  .muted{color:#a1a1aa}
+  .hr{height:1px;background:#262626;margin:12px 0}
+  .mono{font-variant-numeric:tabular-nums}
+  .tiny{font-size:12px;color:#9ca3af}
+
+  /* Search + dropdown */
+  .search-wrap{position:relative}
+  .autocomplete{
+    position:absolute;left:0;right:0;top:calc(100% + 6px);
+    background:#0f0f0f;border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35);overflow:hidden;z-index:50;display:none;
+    max-height:300px;overflow:auto;
+  }
+  .ac-item{display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #1f1f1f}
+  .ac-item:last-child{border-bottom:none}
+  .ac-item:hover,.ac-item.active{background:#1a1a1a}
+  .opt-text{display:flex;flex-direction:column}
+  .opt-title{font-weight:700}
+  .opt-sub{font-size:12px;color:#9ca3af}
+
+  /* Inline SVG “playing cards” */
+  .svg-card{display:block;background:#fff;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+  .svg-card.big{width:120px;height:168px}
+  .svg-card.mini{width:64px;height:90px;border-radius:8px}
+  .svg-card.micro{width:40px;height:56px;border-radius:6px}
+
+  .seen-display{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:start}
+  @media (max-width: 560px){ .seen-display{grid-template-columns:1fr} }
+  .last-five{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* ===== Recommendations panel ===== */
+  .recs{display:grid;gap:10px;margin-top:12px}
+  .rec-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#101010;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+  .rec-name{font-weight:700}
+  .pill{padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:700;letter-spacing:.02em}
+  .pill.hot{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid rgba(34,197,94,.35)}
+  .pill.warm{background:rgba(245,158,11,.2);color:#f59e0b;border:1px solid rgba(245,158,11,.35)}
+  .pill.neutral{background:rgba(59,130,246,.18);color:#93c5fd;border:1px solid rgba(59,130,246,.35)}
+  .pill.cold{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.35)}
+  .delta{color:#9ca3af;font-variant-numeric:tabular-nums}
+
+  /* Lucky Ladies vertical list (unused now, left in place intentionally) */
+  .ll-list{display:grid;gap:8px;margin-top:8px;grid-template-columns:1fr 1fr;grid-template-areas:"left1 right1" "left2 right2" "bottom bottom"}
+  .ll-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#111;border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25);
+    width:100%;
+  }
+  .ll-row .label{font-weight:700}
+  .ll-row .pct{font-variant-numeric:tabular-nums;font-weight:600}
+  #rowUnsuited{grid-area:left1}
+  #rowSuited{grid-area:left2}
+  #rowMatched{grid-area:right1}
+  #rowQHPair{grid-area:right2}
+  #rowQHDealer{grid-area:bottom}
+
+  @media (max-width: 560px){
+    .ll-list{grid-template-columns:1fr;grid-template-areas:"left1" "right1" "left2" "right2" "bottom"}
+  }
+</style>
+</head>
+<body>
+<div class="container" id="container">
+  <h1>Blackjack Side Bet Counter</h1>
+  <p class="sub">Tracks shoe composition by suit/rank and estimates side-bet odds: <b>Pairs</b>, <b>21+3</b>, and <b>Lucky Ladies</b>. Use the search to log seen cards quickly.</p>
+
+  <div class="grid cols-3">
+    <div class="card">
+      <div class="section-title">Shoe</div>
+      <div class="row">
+        <label>Decks:</label>
+        <input id="decks" class="input" type="number" value="6" min="1" max="8" />
+        <button id="newShoe" class="btn">New Shoe</button>
+        <button id="undo" class="btn">Undo Last</button>
+      </div>
+      <div class="hr"></div>
+      <div class="battery-wrap">
+        <div class="battery"><div id="fill" class="battery-fill"></div></div>
+        <div><span id="penPct" class="mono">0</span>% <span class="tiny muted">(penetration)</span></div>
+      </div>
+      <div class="tiny muted" id="remainLbl" style="margin-top:6px">0% dealt — decks remaining ≈ 6.00</div>
+
+      <div class="hr"></div>
+      <div class="section-title">Shoe Tilt</div>
+      <div class="tiny muted">High vs low-card balance; higher means more high cards remaining.</div>
+      <div class="statbox" style="margin-top:10px">
+        <div class="stat"><div class="label">High cards (A,10,J,Q,K)</div><div class="value mono" id="highCount">0</div></div>
+        <div class="stat"><div class="label">Low cards (2–6)</div><div class="value mono" id="lowCount">0</div></div>
+        <div class="stat"><div class="label">Tilt Index</div><div class="value mono" id="bustBias">0.00</div></div>
+        <div class="stat"><div class="label">Guidance</div><div class="value" id="bustAdvice">Neutral</div></div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="hr"></div>
+      <div class="section-title">Recommended Bet</div>
+      <div class="tiny muted">Chosen by highest current hit chance vs baseline context.</div>
+      <div id="recs" class="recs"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Pairs (Player first two cards)</div>
+      <table class="table">
+        <tr class="tr">
+          <td class="th">Any Pair</td><td class="td mono" id="pAny">0.00%</td>
+          <td class="th">Perfect (same rank & suit)</td><td class="td mono" id="pPerfect">0.00%</td>
+        </tr>
+        <tr class="tr">
+          <td class="th">Colored (same rank & color)</td><td class="td mono" id="pColored">0.00%</td>
+          <td class="th">Mixed (same rank, diff colors)</td><td class="td mono" id="pMixed">0.00%</td>
+        </tr>
+      </table>
+
+      <div class="hr"></div>
+      <div class="section-title">21+3 (Player two + Dealer upcard)</div>
+      <table class="table">
+        <tr class="tr">
+          <td class="th">Straight Flush</td><td class="td mono" id="pSF">0.00%</td>
+          <td class="th">Trips</td><td class="td mono" id="pTrips">0.00%</td>
+        </tr>
+        <tr class="tr">
+          <td class="th">Straight (excl. SF)</td><td class="td mono" id="pStraight">0.00%</td>
+          <td class="th">Flush (excl. SF)</td><td class="td mono" id="pFlush">0.00%</td>
+        </tr>
+        <tr class="tr">
+          <td class="th">Any 21+3 Win</td><td class="td mono" id="pAny213">0.00%</td>
+          <td class="th">Suited Trips</td><td class="td mono" id="pSuitedTrips">0.00%</td>
+        </tr>
+      </table>
+
+      <div class="hr"></div>
+      <div class="section-title">Lucky Ladies</div>
+      <!-- Reformatted to match Pairs/21+3 table style -->
+      <table class="table">
+        <tr class="tr">
+          <td class="th">Q♥ Q♥ &amp; Dealer BJ</td><td class="td mono" id="llQHDealerBJ">0.00%</td>
+          <td class="th">Q♥ Q♥ (pair)</td><td class="td mono" id="llQHPair">0.00%</td>
+        </tr>
+        <tr class="tr">
+          <td class="th">Matched 20</td><td class="td mono" id="llMatched20">0.00%</td>
+          <td class="th">Suited 20</td><td class="td mono" id="llSuited20">0.00%</td>
+        </tr>
+        <tr class="tr">
+          <td class="th">Unsuited 20</td><td class="td mono" id="llUnsuited20">0.00%</td>
+          <td class="th"></td><td class="td mono"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Mark Cards Seen</div>
+      <div class="tiny muted">Type a rank or card (e.g., <b>4</b> → 4♠/♥/♦/♣; <b>AS</b>; <b>10H</b>). Selecting a card removes one from the shoe.</div>
+
+      <!-- Search + dropdown -->
+      <div class="row search-wrap" style="margin-top:8px">
+        <input id="seenSearch" class="input" style="flex:1" placeholder="Search card: 4, AS, 10D, QH…" autocomplete="off" />
+        <div id="seenAC" class="autocomplete"></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- Last card big + last 10 -->
+      <div class="seen-display">
+        <div>
+          <div class="tiny muted" style="margin-bottom:6px">Last card</div>
+          <div id="lastBigWrap"></div>
+          <div id="lastEmpty" class="tiny muted">— none yet —</div>
+        </div>
+        <div>
+          <div class="tiny muted" style="margin-bottom:6px">Last 10 cards</div>
+          <div id="lastFive" class="last-five"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{ /* JS unchanged from your last paste */ 
+  const RANKS=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  const SUITS=["S","H","D","C"];
+  const SUIT_LABEL={S:"♠",H:"♥",D:"♦",C:"♣"};
+  const SUIT_NAME={S:"Spades",H:"Hearts",D:"Diamonds",C:"Clubs"};
+  const RANK_NAME={A:"Ace",J:"Jack",Q:"Queen",K:"King","10":"Ten","9":"Nine","8":"Eight","7":"Seven","6":"Six","5":"Five","4":"Four","3":"Three","2":"Two"};
+  const CARDS_PER_DECK=52;
+  const STRAIGHT_SEQS=[[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,0]];
+  let decks=6;
+  let counts=initCounts(decks);
+  const history=[]; const lastCards=[]; let baseline=null;
+  const $=id=>document.getElementById(id);
+  const decksInput=$("decks"),newShoeBtn=$("newShoe"),undoBtn=$("undo");
+  const fill=$("fill"),penPct=$("penPct"),remainLbl=$("remainLbl");
+  const highCountEl=$("highCount"),lowCountEl=$("lowCount"),bustBiasEl=$("bustBias"),bustAdviceEl=$("bustAdvice"),recsEl=$("recs");
+  const pAnyEl=$("pAny"),pPerfectEl=$("pPerfect"),pColoredEl=$("pColored"),pMixedEl=$("pMixed");
+  const pSFEl=$("pSF"),pTripsEl=$("pTrips"),pStraightEl=$("pStraight"),pFlushEl=$("pFlush"),pAny213El=$("pAny213"),pSuitedTripsEl=$("pSuitedTrips");
+  const llQHDealerBJEl=$("llQHDealerBJ"),llQHPairEl=$("llQHPair"),llMatched20El=$("llMatched20"),llSuited20El=$("llSuited20"),llUnsuited20El=$("llUnsuited20");
+  const seenSearch=$("seenSearch"),seenAC=$("seenAC"),lastBigWrap=$("lastBigWrap"),lastEmpty=$("lastEmpty"),lastFive=$("lastFive");
+  wireEvents(); computeBaseline(); renderAll();
+  function initCounts(d){ return Array.from({length:RANKS.length},()=>Array(4).fill(d)); }
+  function totalRemaining(){ let t=0; for(let r=0;r<13;r++) for(let s=0;s<4;s++) t+=counts[r][s]; return t; }
+  function totalRank(r){ return counts[r][0]+counts[r][1]+counts[r][2]+counts[r][3]; }
+  function totalSuit(s){ let t=0; for(let r=0;r<13;r++) t+=counts[r][s]; return t; }
+  function rankIndex(rs){ if(rs==="A")return 0; if(rs==="J")return 10; if(rs==="Q")return 11; if(rs==="K")return 12; if(rs==="10")return 9; const n=+rs; return (n>=2&&n<=9)?n-1:-1; }
+  function suitIndex(sc){ return ({S:0,H:1,D:2,C:3})[sc] ?? -1; }
+  function splitCore(core){ const m=core.match(/^(10|[2-9]|A|J|Q|K)([SHDC])$/); return [m[1],m[2]]; }
+  function cardSVG(rank,suit,size){ const ink=(suit==="H"||suit==="D")?"#cf2233":"#111111"; const suitChar=SUIT_LABEL[suit];
+    const S={corner:size==="big"?18:size==="mini"?12:10,suitSm:size==="big"?16:size==="mini"?10:9,center:size==="big"?40:size==="mini"?26:18};
+    const corner=(x,y,flip=false)=>`<g transform="translate(${x} ${y}) ${flip?'rotate(180)':''}"><text x="0" y="0" font-size="${S.corner}" fill="${ink}" font-weight="800">${rank}</text><text x="0" y="${S.corner}" font-size="${S.suitSm}" fill="${ink}" font-weight="800">${suitChar}</text></g>`;
+    return `<svg class="svg-card ${size}" viewBox="0 0 100 140" aria-hidden="true"><rect x="0" y="0" width="100" height="140" rx="10" ry="10" fill="#ffffff" />${corner(8,18,false)}${corner(92,122,true)}<text x="50" y="74" font-size="${S.center}" fill="${ink}" font-weight="900" text-anchor="middle">${suitChar}</text></svg>`;}
+  function wireEvents(){decksInput.addEventListener("input",()=>{const val=Math.max(1,Math.min(8,+decksInput.value||6));decks=val;counts=initCounts(decks);history.length=0;lastCards.length=0;computeBaseline();renderAll();});
+    newShoeBtn.addEventListener("click",()=>{counts=initCounts(decks);history.length=0;lastCards.length=0;renderAll();});
+    undoBtn.addEventListener("click",()=>{const last=history.pop();if(!last)return;counts[last.r][last.s]++;const i=lastCards.findIndex(x=>x.r===last.r&&x.s===last.s);if(i>-1)lastCards.splice(i,1);renderAll();});
+    seenSearch.addEventListener("input",onSeenType);
+    seenSearch.addEventListener("keydown",(e)=>{if(e.key==="Escape")hideSeenAC(); if(e.key==="Enter"){const active=seenAC.querySelector(".ac-item.active"); if(active){active.click(); e.preventDefault();}}
+      if(e.key==="ArrowDown"||e.key==="ArrowUp"){const items=[...seenAC.querySelectorAll(".ac-item")]; if(!items.length)return; let idx=items.findIndex(n=>n.classList.contains("active"));
+        idx=(idx+(e.key==="ArrowDown"?1:-1)+items.length)%items.length; items.forEach(n=>n.classList.remove("active")); items[idx].classList.add("active"); items[idx].scrollIntoView({block:"nearest"}); e.preventDefault();}});
+    document.addEventListener("click",(e)=>{if(!seenAC.contains(e.target)&&e.target!==seenSearch)hideSeenAC();});}
+  function onSeenType(){let t=seenSearch.value.toUpperCase().replace(/\s+/g,""); const list=buildSeenSuggestions(t); renderSeenAC(list);}
+  function buildSeenSuggestions(t){if(!t)return[]; if(/^\d+$/.test(t)){const r=(t==="1")?"10":t; if(!["2","3","4","5","6","7","8","9","10"].includes(r))return[]; return ["S","H","D","C"].map(s=>`${r}${s}`);}
+    const m=t.match(/^(10|[2-9]|A|J|Q|K)?([SHDC])?$/); if(!m)return[]; const ranks=m[1]?[m[1]]:["A","2","3","4","5","6","7","8","9","10","J","Q","K"]; const suits=m[2]?[m[2]]:["S","H","D","C"]; const out=[]; for(const r of ranks) for(const s of suits) out.push(`${r}${s}`); return out.slice(0,12);}
+  function renderSeenAC(list){if(!list.length){hideSeenAC();return;} seenAC.innerHTML=""; list.forEach((core,i)=>{const [rank,suit]=splitCore(core); const item=document.createElement("div"); item.className="ac-item"; if(i===0)item.classList.add("active");
+      const wrap=document.createElement("div"); wrap.innerHTML=cardSVG(rank,suit,"micro"); item.appendChild(wrap.firstElementChild);
+      const text=document.createElement("div"); text.className="opt-text"; text.innerHTML=`<div class="opt-title">${RANK_NAME[rank]} of ${SUIT_NAME[suit]}</div><div class="opt-sub">${core}</div>`; item.appendChild(text);
+      item.addEventListener("click",()=>selectSeen(core)); seenAC.appendChild(item);}); seenAC.style.display="block";}
+  function hideSeenAC(){seenAC.style.display="none";}
+  function selectSeen(core){const [rank,suit]=splitCore(core); const r=rankIndex(rank), s=suitIndex(suit); if(r<0||s<0)return; if(counts[r][s]>0){counts[r][s]--; history.push({r,s}); lastCards.unshift({r,s}); if(lastCards.length>11)lastCards.pop(); renderAll();}
+    seenSearch.value=""; hideSeenAC(); seenSearch.focus();}
+  function computeBaseline(){const save=counts; counts=initCounts(decks); const base=snapshotProbs(); counts=save; baseline=base;}
+  function snapshotProbs(){return{pairs:probPairs(), p213:prob21plus3(), lucky:probLuckyLadies()};}
+  function renderAll(){const total=decks*CARDS_PER_DECK; const seen=total-totalRemaining(); const pct=total?Math.round(seen/total*100):0; fill.style.width=pct+"%"; penPct.textContent=pct; remainLbl.textContent=`${pct}% dealt — decks remaining ≈ ${(totalRemaining()/CARDS_PER_DECK).toFixed(2)}`;
+    const high=sumRanks([0,8,9,10,12]); const low=sumRanks([1,2,3,4,5]); highCountEl.textContent=high; lowCountEl.textContent=low; const N=totalRemaining(), bias=N?((high-low)/N):0;
+    bustBiasEl.textContent=bias.toFixed(2); bustAdviceEl.textContent=bias>=0.05?"Favorable":(bias<=-0.05?"Unfavorable":"Neutral");
+    const pairRes=probPairs(); setPct(pAnyEl,pairRes.any); setPct(pPerfectEl,pairRes.perfect); setPct(pColoredEl,pairRes.colored); setPct(pMixedEl,pairRes.mixed);
+    const res213=prob21plus3(); setPct(pSFEl,res213.straightFlush); setPct(pTripsEl,res213.trips); setPct(pStraightEl,res213.straight); setPct(pFlushEl,res213.flush); setPct(pAny213El,res213.any); setPct(pSuitedTripsEl,res213.suitedTrips);
+    const ll=probLuckyLadies(); setPct(llQHDealerBJEl,ll.qhqhDealerBJ); setPct(llQHPairEl,ll.qhqhPair); setPct(llMatched20El,ll.matched20); setPct(llSuited20El,ll.suited20); setPct(llUnsuited20El,ll.unsuited20);
+    renderRecommendations({pairRes,res213,ll}); renderLastSeen();}
+  function renderRecommendations({pairRes,res213,ll}){ if(!baseline)computeBaseline();
+    const pp=(x)=>(x*100).toFixed(2)+"%"; const fmtDelta=(curr,base)=>{const dpp=(curr-base)*100; const sign=dpp>0?"+":""; return `${sign}${dpp.toFixed(2)} pts`;};
+    const tag=(diff)=> diff>0.2?"hot": diff>0.08?"warm": diff<-0.08?"cold":"neutral"; const label=(cls)=> cls==="hot"?"HOT":cls==="warm"?"WARM":cls==="cold"?"COLD":"NEUTRAL";
+    const items=[{name:"Any Pair",curr:pairRes.any,base:baseline.pairs.any},{name:"Perfect Pair",curr:pairRes.perfect,base:baseline.pairs.perfect},{name:"Colored Pair",curr:pairRes.colored,base:baseline.pairs.colored},
+      {name:"21+3 — Any Win",curr:res213.any,base:baseline.p213.any},{name:"21+3 — Straight Flush",curr:res213.straightFlush,base:baseline.p213.straightFlush},{name:"21+3 — Trips",curr:res213.trips,base:baseline.p213.trips},
+      {name:"21+3 — Straight",curr:res213.straight,base:baseline.p213.straight},{name:"21+3 — Flush",curr:res213.flush,base:baseline.p213.flush},
+      {name:"Lucky Ladies — Q♥Q♥ + Dealer BJ",curr:ll.qhqhDealerBJ,base:baseline.lucky.qhqhDealerBJ},{name:"Lucky Ladies — Q♥Q♥ pair",curr:ll.qhqhPair,base:baseline.lucky.qhqhPair},
+      {name:"Lucky Ladies — Matched 20",curr:ll.matched20,base:baseline.lucky.matched20},{name:"Lucky Ladies — Suited 20",curr:ll.suited20,base:baseline.lucky.suited20},{name:"Lucky Ladies — Unsuited 20",curr:ll.unsuited20,base:baseline.lucky.unsuited20}];
+    items.sort((a,b)=> b.curr-a.curr); const best=items[0];
+    recsEl.innerHTML=""; if(best){const diffRatio=(best.base>0)?(best.curr-best.base)/best.base:0; const cls=tag(diffRatio); const row=document.createElement("div"); row.className="rec-row";
+      row.innerHTML=`<div class="rec-name">${best.name}</div><span class="pill ${cls}">${label(cls)}</span><span class="delta">now ${pp(best.curr)} • baseline ${pp(best.base)} • ${fmtDelta(best.curr,best.base)}</span>`; recsEl.appendChild(row);}}
+  function renderLastSeen(){lastBigWrap.innerHTML=""; if(lastCards.length){const {r,s}=lastCards[0]; const rank=RANKS[r], suit=SUITS[s]; lastBigWrap.innerHTML=cardSVG(rank,suit,"big"); lastEmpty.style.display="none";} else {lastEmpty.style.display="block";}
+    lastFive.innerHTML=""; for(let i=1;i<Math.min(lastCards.length,11);i++){const {r,s}=lastCards[i]; const rank=RANKS[r], suit=SUITS[s]; const div=document.createElement("div"); div.innerHTML=cardSVG(rank,suit,"mini"); lastFive.appendChild(div.firstElementChild);}}
+  function sumRanks(rankIdxArr){let t=0; for(const r of rankIdxArr) t+=totalRank(r); return t;}
+  function setPct(el,p){el.textContent=isFinite(p)?(p*100).toFixed(2)+"%":"0.00%";}
+  function C(n,k){if(n<0||k<0||k>n)return 0; if(k===0||k===n)return 1; if(k===1)return n; if(k===2)return n*(n-1)/2; if(k===3)return n*(n-1)*(n-2)/6; let res=1; for(let i=1;i<=k;i++){res=res*(n-k+i)/i;} return res;}
+  function probPairs(){const N=totalRemaining(); const denom=C(N,2); if(denom===0)return{any:0,perfect:0,colored:0,mixed:0}; let any=0,perfect=0,colored=0,mixed=0;
+    for(let r=0;r<13;r++){const cs=counts[r]; const rankTotal=cs[0]+cs[1]+cs[2]+cs[3]; const totalPairsRank=C(rankTotal,2); const perfectPairs=C(cs[0],2)+C(cs[1],2)+C(cs[2],2)+C(cs[3],2);
+      const black=cs[0]+cs[3]; const red=cs[1]+cs[2]; const coloredPairs=(C(black,2)-C(cs[0],2)-C(cs[3],2))+(C(red,2)-C(cs[1],2)-C(cs[2],2)); const mixedPairs=totalPairsRank-perfectPairs-coloredPairs;
+      any+=totalPairsRank; perfect+=perfectPairs; colored+=coloredPairs; mixed+=mixedPairs;} return {any:any/denom,perfect:perfect/denom,colored:colored/denom,mixed:mixed/denom};}
+  function prob21plus3(){const N=totalRemaining(); const denom=C(N,3); if(denom===0)return{straightFlush:0,straight:0,flush:0,trips:0,any:0,suitedTrips:0};
+    const suitTotals=[0,0,0,0]; for(let s=0;s<4;s++)suitTotals[s]=totalSuit(s); const rankTotals=RANKS.map((_,r)=>totalRank(r));
+    let straightFlush=0; for(const seq of STRAIGHT_SEQS){for(let s=0;s<4;s++){straightFlush+=counts[seq[0]][s]*counts[seq[1]][s]*counts[seq[2]][s];}}
+    const flushTotal=C(suitTotals[0],3)+C(suitTotals[1],3)+C(suitTotals[2],3)+C(suitTotals[3],3);
+    let trips=0,suitedTrips=0; for(let r=0;r<13;r++){const rt=rankTotals[r]; trips+=C(rt,3); for(let s=0;s<4;s++)suitedTrips+=C(counts[r][s],3);}
+    let straightTotal=0; for(const seq of STRAIGHT_SEQS){straightTotal+=rankTotals[seq[0]]*rankTotals[seq[1]]*rankTotals[seq[2]];}
+    const straightOnly=Math.max(0,straightTotal-straightFlush); const flushOnly=Math.max(0,flushTotal-straightFlush); const anyWin=straightFlush+straightOnly+flushOnly+trips;
+    return {straightFlush:straightFlush/denom,straight:straightOnly/denom,flush:flushOnly/denom,trips:trips/denom,any:anyWin/denom,suitedTrips:suitedTrips/denom};}
+  function probLuckyLadies(){const N=totalRemaining(); const denom=C(N,2); if(!denom)return{qhqhDealerBJ:0,qhqhPair:0,matched20:0,suited20:0,unsuited20:0};
+    const idxTen=9,idxJ=10,idxQ=11,idxK=12,idxA=0; const totals={ten:totalRank(idxTen),j:totalRank(idxJ),q:totalRank(idxQ),k:totalRank(idxK)};
+    const hearts={ten:counts[idxTen][1],j:counts[idxJ][1],q:counts[idxQ][1],k:counts[idxK][1]};
+    const totalTens=totals.ten+totals.j+totals.q+totals.k; const combos20_all=C(totalTens,2);
+    const combos20_suited = (function(){let sum=0; for(const s of [0,1,2,3]){const c=counts[idxTen][s]+counts[idxJ][s]+counts[idxQ][s]+counts[idxK][s]; sum+=C(c,2);} return sum;})();
+    const matched20=C(totals.ten,2)+C(totals.j,2)+C(totals.q,2)+C(totals.k,2);
+    const suited20=combos20_suited; const unsuited20=Math.max(0,combos20_all-suited20);
+    const qHearts=hearts.q; const qhqhPair=C(qHearts,2);
+    let qhqhDealerBJ=0; if(qHearts>=2){const afterN=N-2; const aceTotal=totalRank(idxA); const tenValueTotal=totalTens; const tenAfter=Math.max(0,tenValueTotal-2);
+      const pDealerBJ=afterN>1?((aceTotal/afterN)*((tenAfter)/(afterN-1))+(tenAfter/afterN)*((aceTotal)/(afterN-1))):0; qhqhDealerBJ=qhqhPair/denom*pDealerBJ*denom;}
+    return {qhqhDealerBJ:qhqhDealerBJ/denom,qhqhPair:qhqhPair/denom,matched20:matched20/denom,suited20:suited20/denom,unsuited20:unsuited20/denom};}
+})();
+</script>
+</body>
+</html>
